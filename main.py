@@ -35,14 +35,40 @@ class PassiveAggressiveRegression:
         return numpy.dot(self.weight,numpy.append(x,1.0))
 
 
+class MaxOut:
+    def __init__(self,Dim,Hid=3):
+        self.Dim = Dim
+        self.Hid = Hid
+        self.pa_regs = [PassiveAggressiveRegression(Dim) for _ in xrange(Hid)]
+
+    def argmax(self,x):
+        return numpy.argmax([self.pa_regs[i].predict(x) for i in xrange(self.Hid)])
+
+    def train(self,x,y):
+        idx = self.argmax(x)
+        self.pa_regs[idx].train(x,y)
+
+    def predict(self,x):
+        idx = self.argmax(x)
+        return self.pa_regs[idx].predict(x)
+
 if __name__=='__main__':
     data = get_data('winequality-red.csv')
     Dim = len(data[0][0])
-    pa_reg = PassiveAggressiveRegression(Dim,Eps=0.05)
-    for iter in xrange(200):
+    pa_reg = PassiveAggressiveRegression(Dim)
+    for iter in xrange(100):
         error = 0.0
         for x,y in data:
             error += abs(y-pa_reg.predict(x))
         print error
         for x,y in data:
             pa_reg.train(x,y)
+
+    maxout = MaxOut(Dim)
+    for iter in xrange(300):
+        error = 0.0
+        for x,y in data:
+            error += abs(y-maxout.predict(x))
+        print error
+        for x,y in data:
+            maxout.train(x,y)
